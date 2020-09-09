@@ -2,6 +2,15 @@ import numpy as np
 import re
 import os
 
+def tokenizer(iterator):
+  """Tokenizer generator.
+  Args:
+    iterator: Input iterator with strings.
+  Yields:
+    array of tokens per each value in the input.
+  """
+  for value in iterator:
+    yield value.split()
 
 def clean_str(string):
     """

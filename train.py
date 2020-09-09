@@ -51,7 +51,7 @@ def preprocess():
 
     # Build vocabulary
     max_document_length = max([len(x.split(" ")) for x in x_text_train+x_text_dev])
-    vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
+    vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length, tokenizer_fn=data_helpers.tokenizer)
     x_train = np.array(list(vocab_processor.fit_transform(x_text_train)))
     x_dev = np.array(list(vocab_processor.fit_transform(x_text_dev)))
 
