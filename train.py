@@ -13,8 +13,8 @@ from tensorflow.contrib import learn
 # ==================================================
 
 # Data loading params
-tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data to use for validation")
-tf.flags.DEFINE_string("data_directory", "./data/rt-polaritydata/", "Data source for the categories data.")
+tf.flags.DEFINE_string("train_directory", "./data/rt-polaritydata/", "Data source for the categories training data.")
+tf.flags.DEFINE_string("dev_directory", "./data/rt-polaritydata/", "Data source for the categories development data.")
 
 # Model Hyperparameters
 tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
@@ -46,28 +46,25 @@ def preprocess():
 
     # Load data
     print("Loading data...")
-    x_text, y = data_helpers.load_data_and_labels(FLAGS.data_directory)
+    x_text_train, y_train = data_helpers.load_data_and_labels(FLAGS.train_directory)
+    x_text_dev, y_dev = data_helpers.load_data_and_labels(FLAGS.dev_directory)    
 
     # Build vocabulary
-    max_document_length = max([len(x.split(" ")) for x in x_text])
+    max_document_length = max([len(x.split(" ")) for x in x_text_train+x_text_dev])
     vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
-    x = np.array(list(vocab_processor.fit_transform(x_text)))
+    x_train = np.array(list(vocab_processor.fit_transform(x_text_train)))
+    x_dev = np.array(list(vocab_processor.fit_transform(x_text_dev)))
 
     # Randomly shuffle data
     np.random.seed(10)
-    shuffle_indices = np.random.permutation(np.arange(len(y)))
-    x_shuffled = x[shuffle_indices]
-    y_shuffled = y[shuffle_indices]
+    shuffle_indices = np.random.permutation(np.arange(len(y_train)))
+    x_train = x_train[shuffle_indices]
+    y_train = y_train[shuffle_indices]
 
-    # Split train/test set
-    # TODO: This is very crude, should use cross-validation
-    dev_sample_index = -1 * int(FLAGS.dev_sample_percentage * float(len(y)))
-    x_train, x_dev = x_shuffled[:dev_sample_index], x_shuffled[dev_sample_index:]
-    y_train, y_dev = y_shuffled[:dev_sample_index], y_shuffled[dev_sample_index:]
-
-    del x, y, x_shuffled, y_shuffled
-    print("Vocabulary Size: {:d}".format(len(vocab_processor.vocabulary_)))
-    print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
+    shuffle_indices = np.random.permutation(np.arange(len(y_dev)))
+    x_dev = x_dev[shuffle_indices]
+    y_dev = y_dev[shuffle_indices]
+    
     return x_train, y_train, vocab_processor, x_dev, y_dev
 
 def train(x_train, y_train, vocab_processor, x_dev, y_dev):
@@ -179,8 +176,13 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev):
                 train_step(x_batch, y_batch)
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % FLAGS.evaluate_every == 0:
+                    dev_batches = data_helpers.batch_iter(
+                        list(zip(x_dev, y_dev)), FLAGS.batch_size, 1)   # TODO New flag indicating dev batch size
+                    
                     print("\nEvaluation:")
-                    dev_step(x_dev, y_dev, writer=dev_summary_writer)
+                    for dbatch in dev_batches:
+                        x_dbatch, y_dbatch = zip(*dbatch)
+                        dev_step(x_dbatch, y_dbatch, writer=dev_summary_writer) # TODO Fix summary - right now it writes a summary for every dev batch
                     print("")
                 if current_step % FLAGS.checkpoint_every == 0:
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)

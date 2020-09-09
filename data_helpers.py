@@ -3,7 +3,7 @@ import re
 import os
 
 
-def clean_str_old(string):
+def clean_str(string):
     """
     Tokenization/string cleaning for all datasets except for SST.
     Original taken from https://github.com/yoonkim/CNN_sentence/blob/master/process_data.py
