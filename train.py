@@ -9,10 +9,14 @@ import data_helpers
 from text_cnn import TextCNN
 from tensorflow.contrib import learn
 
+# Ignore deprecation warnings
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 # Parameters
 # ==================================================
 
 # Data loading params
+tf.flags.DEFINE_string("model_name", "", "Name of the model and also output directory.")
 tf.flags.DEFINE_string("train_directory", "./data/rt-polaritydata/", "Data source for the categories training data.")
 tf.flags.DEFINE_string("dev_directory", "./data/rt-polaritydata/", "Data source for the categories development data.")
 
@@ -48,6 +52,16 @@ def preprocess():
     print("Loading data...")
     x_text_train, y_train = data_helpers.load_data_and_labels(FLAGS.train_directory)
     x_text_dev, y_dev = data_helpers.load_data_and_labels(FLAGS.dev_directory)    
+
+    print("Categories:")
+    from pprint import pprint
+    names = [filename.strip(".txt") for filename in os.listdir(FLAGS.train_directory) 
+                if filename.endswith(".txt")]
+    pprint(list(zip(names, range(0,len(names)))))
+
+    print("Train size:\t", len(y_train))
+    print("Dev size:\t", len(y_dev))
+    print()
 
     # Build vocabulary
     max_document_length = max([len(x.split(" ")) for x in x_text_train+x_text_dev])
@@ -103,8 +117,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev):
             grad_summaries_merged = tf.summary.merge(grad_summaries)
 
             # Output directory for models and summaries
-            timestamp = str(int(time.time()))
-            out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
+            out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", FLAGS.model_name))
             print("Writing to {}\n".format(out_dir))
 
             # Summaries for loss and accuracy

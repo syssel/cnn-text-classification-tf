@@ -10,6 +10,9 @@ from text_cnn import TextCNN
 from tensorflow.contrib import learn
 import csv
 
+# Ignore deprecation warnings
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 # Parameters
 # ==================================================
 
@@ -37,6 +40,12 @@ FLAGS = tf.flags.FLAGS
 if FLAGS.eval_train:
     x_raw, y_test = data_helpers.load_data_and_labels(FLAGS.data_directory)
     y_test = np.argmax(y_test, axis=1)
+
+    print("Categories:")
+    from pprint import pprint
+    names = [filename.strip(".txt") for filename in os.listdir(FLAGS.data_directory) 
+                if filename.endswith(".txt")]
+    pprint(list(zip(names, range(0,len(names)))))    
 else:
     x_raw = ["a masterpiece four years in the making", "everything is off."]
     y_test = [1, 0]
