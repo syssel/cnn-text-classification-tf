@@ -25,6 +25,7 @@ tf.flags.DEFINE_string("checkpoint_dir", "", "Checkpoint directory from training
 tf.flags.DEFINE_boolean("eval_train", False, "Evaluate on all training data")
 
 # Misc Parameters
+tf.flags.DEFINE_string("random_seed", "", "Random seed to be used.")
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 
@@ -62,6 +63,8 @@ print("\nEvaluating...\n")
 checkpoint_file = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
 graph = tf.Graph()
 with graph.as_default():
+    if FLAGS.random_seed: np.random.seed(int(FLAGS.random_seed))
+    
     session_conf = tf.ConfigProto(
       allow_soft_placement=FLAGS.allow_soft_placement,
       log_device_placement=FLAGS.log_device_placement)

@@ -34,6 +34,7 @@ tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after 
 tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
 tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
 # Misc Parameters
+tf.flags.DEFINE_string("random_seed", "", "Random seed to be used.")
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 
@@ -70,7 +71,7 @@ def preprocess():
     x_dev = np.array(list(vocab_processor.fit_transform(x_text_dev)))
 
     # Randomly shuffle data
-    np.random.seed(10)
+    if FLAGS.random_seed: np.random.seed(int(FLAGS.random_seed))
     shuffle_indices = np.random.permutation(np.arange(len(y_train)))
     x_train = x_train[shuffle_indices]
     y_train = y_train[shuffle_indices]
@@ -86,6 +87,7 @@ def train(x_train, y_train, vocab_processor, x_dev, y_dev):
     # ==================================================
 
     with tf.Graph().as_default():
+        if FLAGS.random_seed: tf.set_random_seed(int(FLAGS.random_seed))
         session_conf = tf.ConfigProto(
           allow_soft_placement=FLAGS.allow_soft_placement,
           log_device_placement=FLAGS.log_device_placement)
